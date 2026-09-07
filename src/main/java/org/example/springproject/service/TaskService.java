@@ -48,10 +48,10 @@
         }
 
         public Task updateTask(Task task, Long id) {
-            if (task.id() != null) {
+            if (taskMap.get(id) != null) {
                 throw new IllegalArgumentException("Task id is already set");
             }
-            if (!(task.status() != Status.DONE)){
+            if (!(taskMap.get(id).status() != Status.DONE)){
                 throw new IllegalArgumentException("Task status done");
             }
             var taskByUpdate  = new Task(

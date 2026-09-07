@@ -1,7 +1,7 @@
 package org.example.springproject;
 
-import org.example.springproject.Enum.Priority;
-import org.example.springproject.Enum.Status;
+import org.example.springproject.enum_model.Priority;
+import org.example.springproject.enum_model.Status;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

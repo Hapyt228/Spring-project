@@ -1,58 +1,76 @@
-package org.example.springproject.service;
+    package org.example.springproject.service;
 
-import org.example.springproject.Enum.Priority;
-import org.example.springproject.Enum.Status;
-import org.example.springproject.Task;
-import org.springframework.stereotype.Service;
+    import org.example.springproject.Task;
+    import org.example.springproject.enum_model.Status;
+    import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+    import java.util.HashMap;
+    import java.util.List;
+    import java.util.Map;
+    import java.util.NoSuchElementException;
+    import java.util.concurrent.atomic.AtomicLong;
 
-@Service
-public class TaskService {
+    @Service
+    public class TaskService {
 
-    private final Map<Long, Task> taskMap = Map.of(
-            1L, new Task(
-                    1L,
-                    2L,
-                    3L,
-                    Status.CREATED,
-                    LocalDateTime.now(),
-                    LocalDate.now().plusDays(5),
-                    Priority.Medium
-            ),
-                    2L, new Task(
-                    2L,
-                    24L,
-                    34L,
-                    Status.CREATED,
-                    LocalDateTime.now(),
-                    LocalDate.now().plusDays(5),
-                    Priority.Medium
-            ),
-                    3L, new Task(
-                    3L,
-                    23L,
-                    33L,
-                    Status.CREATED,
-                    LocalDateTime.now(),
-                    LocalDate.now().plusDays(5),
-                    Priority.Medium
-            )
-    );
+        private Map<Long, Task> taskMap = new HashMap<Long, Task>();
+        private AtomicLong idGenerator = new AtomicLong(0);
 
-
-    public Task getTaskSevice(Long id) {
-        if (!taskMap.containsKey(id)) {
-            throw new NoSuchElementException("Not found by id = " + id);
+        public Task getTaskService(Long id) {
+            if (!taskMap.containsKey(id)) {
+                throw new NoSuchElementException("Not found by id = " + id);
+            }
+            return taskMap.get(id);
         }
-        return taskMap.get(id);
-    }
 
-    public List<Task> getAllTasks() {
-        return taskMap.values().stream().toList();
+        public List<Task> getAllTasks() {
+            return taskMap.values().stream().toList();
+        }
+
+        public  Task createTask(Task task) {
+            if (task.id() != null) {
+                throw new IllegalArgumentException("Task id is already set");
+            }
+            if (task.status() != null) {
+                throw new IllegalArgumentException("Task status is already set");
+            }
+            var taskCreated = new Task(
+                    idGenerator.incrementAndGet(),
+                    task.creatorId(),
+                    task.assignedUserId(),
+                    Status.CREATED,
+                    task.createDateTime(),
+                    task.deadlineDate(),
+                    task.priority()
+            );
+            taskMap.put(taskCreated.id() ,taskCreated);
+            return taskCreated;
+        }
+
+        public Task updateTask(Task task, Long id) {
+            if (task.id() != null) {
+                throw new IllegalArgumentException("Task id is already set");
+            }
+            if (!(task.status() != Status.DONE)){
+                throw new IllegalArgumentException("Task status done");
+            }
+            var taskByUpdate  = new Task(
+                    id,
+                    task.creatorId(),
+                    task.assignedUserId(),
+                    Status.IN_PROGRESS,
+                    task.createDateTime(),
+                    task.deadlineDate(),
+                    task.priority()
+            );
+            taskMap.put(id ,taskByUpdate);
+            return  taskByUpdate;
+        }
+
+        public void deleteTask(Long id) {
+            if (taskMap.get(id) == null) {
+                throw new NoSuchElementException("Not found by id = " + id);
+            }
+            taskMap.remove(id);
+        }
     }
-}

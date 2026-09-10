@@ -1,6 +1,6 @@
 package org.example.springproject.controller;
 
-import org.example.springproject.Task;
+import org.example.springproject.object.Task;
 import org.example.springproject.service.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,7 @@ public class TaskController {
         try {
             log.info("getTaskService: id= " + id);
             return ResponseEntity.ok(taskService.getTaskService(id));
-        } catch (NoSuchElementException e) {
+        } catch (Exception e) {
             log.info("Exception not found by getTaskService");
             return ResponseEntity.notFound().build();
         }
@@ -59,7 +59,7 @@ public class TaskController {
         log.info("updateTask: task= " + task);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(taskService.updateTask(task, id));
-        } catch (NoSuchElementException e) {
+        } catch (Exception e) {
             log.info("Exception not found by updateTask");
             return ResponseEntity.notFound().build();
         }
@@ -74,8 +74,22 @@ public class TaskController {
         taskService.deleteTask(id);
         return ResponseEntity.status(HttpStatus.OK)
                 .build();
-        } catch (NoSuchElementException e) {
+        } catch (Exception e) {
             log.info("Exception not found by deleteTask");
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/tasks/{id}/start")
+    public ResponseEntity<Task> startTask(
+            @RequestBody Task task
+    ) {
+        try {
+            log.info("startTask: task= " + task);
+            return ResponseEntity.status(HttpStatus.ACCEPTED)
+                    .body(taskService.startTask(task));
+        } catch (Exception e) {
+            log.info("БЕБЕ");
             return ResponseEntity.notFound().build();
         }
     }

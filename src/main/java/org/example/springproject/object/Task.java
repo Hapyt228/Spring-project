@@ -1,4 +1,4 @@
-package org.example.springproject;
+package org.example.springproject.object;
 
 import org.example.springproject.enum_model.Priority;
 import org.example.springproject.enum_model.Status;

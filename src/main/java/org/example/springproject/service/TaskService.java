@@ -6,16 +6,14 @@
     import org.example.springproject.repository.TaskRepository;
     import org.springframework.stereotype.Service;
 
-    import java.util.HashMap;
+    import java.time.LocalDateTime;
     import java.util.List;
-    import java.util.Map;
     import java.util.NoSuchElementException;
 
 
     @Service
     public class TaskService {
 
-        private Map<Long, Task> taskMap = new HashMap<Long, Task>();
         private final TaskRepository taskRepository;
 
         public TaskService(TaskRepository taskRepository) {
@@ -36,10 +34,6 @@
         }
 
         public  Task createTask(Task task) {
-            if (task.id() != null) {
-                throw new IllegalArgumentException("Task id is already set");
-            }
-
             if (task.status() != null) {
                 throw new IllegalArgumentException("Task status is already set");
             }
@@ -51,7 +45,7 @@
 
         public Task updateTask(Task task, Long id) {
             var taskByUpdate = taskRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Not found by id = " + id));
-            if (taskByUpdate.getStatus() == Status.DONE){
+            if (taskByUpdate.getStatus() == Status.DONE && task.status() != Status.IN_PROGRESS) {
                 throw new IllegalArgumentException("Task status done");
             }
             taskByUpdate.setAssignedUserId(task.assignedUserId());
@@ -69,14 +63,12 @@
             taskRepository.save(taskByThisId);
         }
 
-        public Task startTask(Task task) {
-            if (task.id() != null) {
-                throw new IllegalArgumentException("Task id is already set");
+        public Task startTask(Long id) {
+            TaskEntity taskByStart =  taskRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Not found by id = " + id));
+
+            if (taskByStart.getStatus() != Status.CREATED) {
+                throw new IllegalArgumentException("Task can be started only from CREATED status");
             }
-            if (task.assignedUserId() == null) {
-                throw new IllegalArgumentException("Task assignedUserId not set");
-            }
-            var taskByStart  = taskByTaskEntity(task);
             long activeTasksCount = taskRepository.countByAssignedUserIdAndStatus(
                     taskByStart.getAssignedUserId(),
                     Status.IN_PROGRESS
@@ -89,6 +81,18 @@
             return  taskEntityByTask(saveEntity);
         }
 
+        public Task completeTask(Long id) {
+            TaskEntity taskByComplete =  taskRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Not found by id = " + id));
+
+            if (taskByComplete.getStatus() != Status.IN_PROGRESS) {
+                throw new IllegalArgumentException("Task can be progress only from DONE status");
+            }
+            taskByComplete.setStatus(Status.DONE);
+            taskByComplete.setDoneDateTime(LocalDateTime.now());
+            var saveEntity = taskRepository.save(taskByComplete);
+            return  taskEntityByTask(saveEntity);
+        }
+
         private Task taskEntityByTask(TaskEntity taskEntity) {
             return new Task(
                     taskEntity.getId(),
@@ -97,7 +101,8 @@
                     taskEntity.getStatus(),
                     taskEntity.getCreateDateTime(),
                     taskEntity.getDeadlineDate(),
-                    taskEntity.getPriority()
+                    taskEntity.getPriority(),
+                    taskEntity.getDoneDateTime()
                     );
         }
 
@@ -109,9 +114,8 @@
                     task.status(),
                     task.createDateTime(),
                     task.deadlineDate(),
-                    task.priority()
+                    task.priority(),
+                    task.doneDateTime()
             );
         }
-
-
     }

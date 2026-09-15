@@ -1,10 +1,15 @@
 package org.example.springproject.controller;
 
 import jakarta.validation.Valid;
+import org.example.springproject.enum_model.Priority;
+import org.example.springproject.enum_model.Status;
+import org.example.springproject.filter.TaskSearchFilter;
 import org.example.springproject.object.Task;
 import org.example.springproject.service.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -81,6 +86,21 @@ public class TaskController {
         log.info("completeTask: id= " + id);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(taskService.completeTask(id));
+    }
+
+    @GetMapping("/tasks/search")
+    public ResponseEntity<List<Task>> searchTasks(
+            @RequestParam(required = false) Long creatorId,
+            @RequestParam(required = false) Long assignedUserId,
+            @RequestParam(required = false) Status status,
+            @RequestParam(required = false) Priority priority,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        TaskSearchFilter filter = new TaskSearchFilter(creatorId, assignedUserId, status, priority);
+        Pageable pageable = PageRequest.of(page, size);
+        log.info("searchTasks: filter= " + filter + ", page= " + page + ", size= " + size);
+        return ResponseEntity.ok(taskService.searchTasks(filter, pageable));
     }
 
 

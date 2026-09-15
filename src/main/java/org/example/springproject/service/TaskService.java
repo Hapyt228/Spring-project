@@ -1,9 +1,12 @@
     package org.example.springproject.service;
 
+    import org.example.springproject.filter.TaskSearchFilter;
+    import org.example.springproject.mapper.TaskMapper;
     import org.example.springproject.object.Task;
     import org.example.springproject.enum_model.Status;
     import org.example.springproject.object.TaskEntity;
     import org.example.springproject.repository.TaskRepository;
+    import org.springframework.data.domain.Pageable;
     import org.springframework.stereotype.Service;
 
     import java.time.LocalDateTime;
@@ -15,21 +18,23 @@
     public class TaskService {
 
         private final TaskRepository taskRepository;
+        private final TaskMapper taskMapper;
 
-        public TaskService(TaskRepository taskRepository) {
+        public TaskService(TaskRepository taskRepository, TaskMapper taskMapper) {
             this.taskRepository = taskRepository;
+            this.taskMapper = taskMapper;
         }
 
         public Task getTaskService(Long id) {
 
             TaskEntity taskByThisId =  taskRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Not found by id = " + id));
-            return  taskEntityByTask(taskByThisId);
+            return  taskMapper.taskEntityByTask(taskByThisId);
         }
 
         public List<Task> getAllTasks() {
             List<TaskEntity> allTask = taskRepository.findAll();
             return allTask.stream()
-                    .map(this::taskEntityByTask)
+                    .map(taskMapper::taskEntityByTask)
                     .toList();
         }
 
@@ -37,10 +42,10 @@
             if (task.status() != null) {
                 throw new IllegalArgumentException("Task status is already set");
             }
-            var taskCreated = taskByTaskEntity(task);
+            var taskCreated = taskMapper.taskByTaskEntity(task);
             taskCreated.setStatus(Status.CREATED);
             var saveEntity = taskRepository.save(taskCreated);
-            return taskEntityByTask(saveEntity);
+            return taskMapper.taskEntityByTask(saveEntity);
         }
 
         public Task updateTask(Task task, Long id) {
@@ -54,7 +59,7 @@
             taskByUpdate.setDeadlineDate(task.deadlineDate());
             taskByUpdate.setPriority(task.priority());
             var saveEntity = taskRepository.save(taskByUpdate);
-            return  taskEntityByTask(saveEntity);
+            return  taskMapper.taskEntityByTask(saveEntity);
         }
 
         public void deleteTask(Long id) {
@@ -78,7 +83,7 @@
             }
             taskByStart.setStatus(Status.IN_PROGRESS);
             var saveEntity = taskRepository.save(taskByStart);
-            return  taskEntityByTask(saveEntity);
+            return  taskMapper.taskEntityByTask(saveEntity);
         }
 
         public Task completeTask(Long id) {
@@ -90,32 +95,20 @@
             taskByComplete.setStatus(Status.DONE);
             taskByComplete.setDoneDateTime(LocalDateTime.now());
             var saveEntity = taskRepository.save(taskByComplete);
-            return  taskEntityByTask(saveEntity);
+            return  taskMapper.taskEntityByTask(saveEntity);
         }
 
-        private Task taskEntityByTask(TaskEntity taskEntity) {
-            return new Task(
-                    taskEntity.getId(),
-                    taskEntity.getCreatorId(),
-                    taskEntity.getAssignedUserId(),
-                    taskEntity.getStatus(),
-                    taskEntity.getCreateDateTime(),
-                    taskEntity.getDeadlineDate(),
-                    taskEntity.getPriority(),
-                    taskEntity.getDoneDateTime()
-                    );
-        }
-
-        private TaskEntity taskByTaskEntity(Task task) {
-            return new TaskEntity(
-                    null,
-                    task.creatorId(),
-                    task.assignedUserId(),
-                    task.status(),
-                    task.createDateTime(),
-                    task.deadlineDate(),
-                    task.priority(),
-                    task.doneDateTime()
+        public List<Task> searchTasks(TaskSearchFilter filter, Pageable pageable) {
+            List<TaskEntity> foundTasks = taskRepository.searchTasks(
+                    filter.creatorId(),
+                    filter.assignedUserId(),
+                    filter.status(),
+                    filter.priority(),
+                    pageable
             );
+            return foundTasks.stream()
+                    .map(taskMapper::taskEntityByTask)
+                    .toList();
+
         }
     }
